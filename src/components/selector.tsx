@@ -120,6 +120,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
   );
 
   const handleStepClick = useCallback((step: any) => {
+      
     selectStepName(step.name);
     selectStep(step.id);
     selectOptionName("");
@@ -136,7 +137,16 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
   const handleOptionClick = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>, attribute: any) => {
-      mouseEvent.stopPropagation(); // Prevent the click from
+        mouseEvent.stopPropagation(); // Prevent the click from spreading to other elements
+        
+        //If attribute is disabled, exit to prevent click
+        if ( !attribute.enabled )
+        {
+            mouseEvent.preventDefault(); //Do nothing by default other than alert and return
+            alert("This option is not compatible with another selection.");
+            return false;
+        }
+        
       console.log(`Selected Attribute: ${attribute.name}`);
       setMountingSelectedOption(attribute.name);
       selectOption(attribute.id);
@@ -768,7 +778,8 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     "MOUNTING ACCESSORY FINISH TYPE",
                     "SHADE ACCESSORY FINISH TYPE",
                     "MOUNTING OPTIONS",
-                    "CANOPY"
+                    "CANOPY",
+                    "LUMENS" //08.08.2025 Fix "LUMENS" to show regular buttons instead of thumbnails
                   ].includes(normalizedStepName);
                   const noBorderSteps = [
                     "COLOR TEMPERATURE",
@@ -781,6 +792,12 @@ const Selector: FunctionComponent<SelectorProps> = ({
                   const isNoBorderStep = noBorderSteps.includes(normalizedStepName);
                   const isShadeSize = normalizedStepName === "SHADE SIZE";
 
+                  //Determine if an attribute is found more than once to consider it a duplicate, to apply a different visibility method (faded out vs completely hidden)
+                  const nameCounts = step.options.reduce((acc, attribute) => {
+                    acc[attribute.name] = (acc[attribute.name] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                      
                   return (
                     <div
                       className="menu_choice_step_step"
@@ -790,6 +807,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                         setCloseAttribute(step.id === selectedStepId ? !closeAttribute : true); // Toggle options visibility
                       }}
                       style={{ cursor: "pointer" }} // Make the entire area look clickable
+                      data-source={step.name.toLowerCase().trim().indexOf("source") > -1 ? "1" : "0" }
                     >
                       <div
                         className="menu_choice_step_title"
@@ -860,17 +878,20 @@ const Selector: FunctionComponent<SelectorProps> = ({
                             closeAttribute && step.id === selectedStepId ? "0.2s" : "0s",
                         }}
                       >
+
                         {closeAttribute && step.id === selectedStepId && (
                           <>
                             {Array.from(
                               new Map(step.options.map((attribute) => [attribute.id, attribute])).values()
                             )
-                              .filter((attribute) => attribute.enabled !== false)
+                              //.filter((attribute) => attribute.enabled !== false) //08.08.2025 Allow Incompatible Options to be Visible with Opacity
                               .map((attribute) => (
                                 <ListItem
                                   key={attribute.id}
                                   onClick={(mouseEvent: React.MouseEvent<HTMLElement>) => handleOptionClick(mouseEvent, attribute)}
                                   selected={attribute.selected}
+                                  data-enabled={attribute.enabled ? "1" : "0"} 
+                                  data-duplicate={nameCounts[attribute.name] > 1 ? "1" :"0"}
                                   style={{
                                     backgroundColor: attribute.selected ? "#7f8c9d" : "white",
                                     color: attribute.selected ? "white" : "inherit",
@@ -887,7 +908,12 @@ const Selector: FunctionComponent<SelectorProps> = ({
                                     height: isShadeSize ? "85px" : "auto",
                                     width: isShadeSize ? "85px" : "auto",
                                     textAlign: isShadeSize ? "center" : "inherit",
+                                    opacity: attribute.enabled ? "1" : "0.1",
                                   }}
+                                  title={isShadeSize
+                                    ? attribute.name.replace(/[a-zA-Z]/g, "")
+                                    : attribute.name}
+
                                 >
                                   {isSpecialStep ? (
                                     <div

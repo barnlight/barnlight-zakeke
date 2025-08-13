@@ -407,6 +407,12 @@ div {
         transform 0.3s ease-in-out;
 }
 
+.menu_choice_step_step[data-source='1'] { display: none !important; }
+.menu_options > div[data-enabled='0'] { cursor: not-allowed; }
+.menu_options > div[data-enabled='0'][data-duplicate='1'] { display: none !important; }
+.menu_options > div[data-enabled='1'] { transition: 300ms border; }
+.menu_options > div[data-enabled='1']:hover { border-color: #7f8c9d !important; }
+
 @media screen and (max-width: 568px) {
     .menu_options {
         gap: 8px;
