@@ -35,7 +35,7 @@ const Container = styled.div`
   line-height: 16px;
 
   @media (max-width: 768px) {
-    height: auto;
+  height: auto;
   }
 `;
 
@@ -75,12 +75,43 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
     const { showDialog, closeDialog } = useDialogManager();
 
-    const idsToRemove = [-1];
-    const groups1 = groups.filter((obj) => !idsToRemove.includes(obj.id));
-
     // Permanently exclude the first group from the visible groups
-    const visibleGroups = groups1.slice(0, 3);
-    const hiddenGroup = groups1[3];
+    const idsToRemove = [-1];
+
+    var _group, _attributes, _attribute;
+    var _gid, _disabled_count;
+
+    // Iterate each group as: groups[g]
+    for (var g in groups) {
+        _group = groups[g];
+        _attributes = _group["attributes"];
+        _disabled_count = 0;
+
+        // Iterate each attribute in this group: groups[g][attributes][a]
+        for (var a in _attributes) {
+            _attribute = _attributes[a];
+
+            // Check if this attribute is: enabled=false
+            if (_attribute["enabled"] === false) {
+                _disabled_count++;
+            }
+        }
+
+        // Check if -all- attributes in this group have: enabled=false
+        if ((_gid = _group["id"]) >= 0 && _disabled_count === _attributes.length) {
+            console.log("Group '" + _group["name"] + "' Has No Enabled Attributes", _gid);
+
+            // If so, add this group to idsToRemove
+            idsToRemove.push(_gid);
+        }
+        else {
+            console.log("Group '" + _group["name"] + "' Has All Enabled Attributes", _group["id"]);
+        }
+    }
+
+    const visibleGroups = groups.filter((obj) => !idsToRemove.includes(obj.id)); // groups1.slice(0, 3); // Removed static reduction of groups which should be visible
+
+    const hiddenGroup = visibleGroups[0];
 
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const [isRecapPanelOpened, setRecapPanelOpened] = useState(
@@ -108,6 +139,9 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const [openSteps, setOpenSteps] = useState<Set<number>>(new Set());
     const viewFooter = useRef<HTMLDivElement | null>(null);
 
+    //Additional Identifying Properties
+    const [shadeSize, setShadeSize] = useState<string | null>(null); // Values: Integers 8" through 28"
+    const [mountingType, setMountingType] = useState<string | null>(null); // Values: A (angled) | S (straight)
 
     useEffect(() => {
         if (sellerSettings && sellerSettings?.isCompositionRecapVisibleFromStart)
@@ -116,7 +150,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
     var selectedGroup = visibleGroups.find((group) => group.id === selectedGroupId);
     var selectedStep: any = selectedGroup
-        ? selectedStep = selectedGroup.steps.find((step) => step.id === selectedStepId)
+        ? selectedGroup.steps.find((step) => step.id === selectedStepId) // REMOVED: selectedStep =
         : null;
 
     const attributes = useMemo(
@@ -125,7 +159,6 @@ const Selector: FunctionComponent<SelectorProps> = ({
     );
 
     const handleStepClick = useCallback((step: any) => {
-
         selectStepName(step.name);
         selectStep(step.id);
         selectOptionName("");
@@ -151,7 +184,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 return false;
             }
 
-            console.log(`Selected Attribute: ${attribute.name}`);
+            //console.log(`Selected Attribute: ${attribute.name}`); // NOTE: This is technically an Option and variable should be named `option`
             setMountingSelectedOption(attribute.name);
             selectOption(attribute.id);
             selectOptionName(attribute.name);
@@ -159,119 +192,10 @@ const Selector: FunctionComponent<SelectorProps> = ({
         [selectOption, selectOptionName]
     )
 
-    // const handleOptionClick = useCallback((attribute: any) => {
-    //   console.log(`Selected Attribute: ${attribute.name}`);
-    //   setMountingSelectedOption(attribute.name);
-    //   selectOption(attribute.id);
-    //   selectOptionName(attribute.name);
-    //   setCloseAttribute(true); 
-    // }, [selectOption, selectOptionName]);
-
-
-    // console.log('selectoption', mountingSelectedOption)
-
-    // console.log('mouunting')
     const filteredAttributes = useMemo(() => {
         if (!selectedGroup?.attributes) return [];
 
-        // console.log("Selected Group:", selectedGroup);
-
-        // Handling SHADE group logic
-        if (selectedGroup.name === "SHADE") {
-            const lightSourceGroup = groups.find((group) => group.name === "LIGHT SOURCE");
-
-            if (!lightSourceGroup?.attributes) {
-                return selectedGroup.attributes.filter((step) => step.enabled);
-            }
-
-            const sourceStep = lightSourceGroup.attributes.find(
-                (step) => step.name?.trim().toUpperCase() === "SOURCE"
-            );
-
-            const isNauticalLEDSelected = sourceStep?.options?.some(
-                (option) => option.selected && option.name?.trim().toUpperCase() === "NAUTICAL LED"
-            );
-
-            return selectedGroup.attributes.filter((step) => {
-                if (!step.enabled) return false;
-                const stepName = step.name.trim().toUpperCase();
-
-                // Hide Shade Accessory and related attributes if Nautical LED is selected
-                if (
-                    isNauticalLEDSelected &&
-                    ["SHADE ACCESSORY"].includes(stepName)
-                ) {
-                    console.log("Hiding Shade Accessory from SHADE group");
-                    return false;
-                }
-
-                return true;
-            });
-        }
-
-        // Handling LIGHT SOURCE group logic
-        if (selectedGroup.name === "LIGHT SOURCE") {
-            const sourceStep = selectedGroup.attributes.find(
-                (step) => step.name?.trim().toUpperCase() === "SOURCE"
-            );
-
-            const isNauticalLEDSelected = sourceStep?.options?.some(
-                (option) => option.selected && option.name?.trim().toUpperCase() === "NAUTICAL LED"
-            );
-
-            return selectedGroup.attributes.filter((step) => {
-                if (!step.enabled) return false;
-                if (isNauticalLEDSelected && step.name.trim().toUpperCase() === "SHADE ACCESSORY") {
-                    // console.log("Hiding Shade Accessory");
-                    return false;
-                }
-                return true;
-            });
-        }
-
-        // Handling MOUNTING group logic
-        if (selectedGroup.name === "MOUNTING") {
-            const attributes = selectedGroup.attributes;
-            // console.log('first', selectedGroup.name)
-            // Find the mounting accessory and check its selection
-            const mountingAccessory = attributes.find(
-                (step) => step.name === "Mounting Accessory"
-            );
-            // console.log('mounting ccessory', mountingAccessory)
-            // const selectedOption = mountingAccessory?.options?.find((opt) => opt.name === 'None');
-            const isNoneSelected = mountingSelectedOption === "None";
-
-            // console.log("Selected Mounting Accessory Option:", isNoneSelected);
-            // console.log("Is 'None' selected:", isNoneSelected);
-
-            // Track whether we have seen MOUNTING ACCESSORY to avoid duplicates
-            let sawMountingAccessory = false;
-
-            return attributes.filter((step) => {
-                if (!step.enabled) {
-                    // console.log(`Step ${step.name} is disabled`);
-                    return false;
-                }
-
-                const stepName = step.name?.trim().toUpperCase();
-
-                // Hide finish attributes if 'None' is selected
-                if (isNoneSelected && ["MOUNTING ACCESSORY FINISH TYPE", "MOUNTING ACCESSORY FINISH"].includes(stepName)) {
-                    // console.log(`Hiding ${stepName} because 'None' is selected`);
-                    step.enabled = false; // Ensure it is disabled in data
-                    return false;
-                }
-
-                // Show finish attributes if something other than 'None' is selected
-                if (!isNoneSelected && ["MOUNTING ACCESSORY FINISH TYPE", "MOUNTING ACCESSORY FINISH"].includes(stepName)) {
-                    // console.log(`Showing ${stepName} because an accessory is selected`);
-                    step.enabled = true; // Re-enable these options
-                    return true;
-                }
-
-                return true;
-            });
-        }
+        console.log("Selected Group:", selectedGroup);
 
         // General filtering for other groups
         return selectedGroup.attributes.filter((step) => step.enabled);
@@ -420,7 +344,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
             const selectedOptionsMap = new Map<string, string>();
 
-            // Only include visible groups (first three groups) and their selected options
+            // Only include visible groups and their selected options
             visibleGroups.forEach((group) => {
                 group.attributes.forEach((attribute) => {
                     const selectedOption = attribute.options.find((option) => option.selected);
@@ -746,6 +670,17 @@ const Selector: FunctionComponent<SelectorProps> = ({
                                 selectGroup(group.id);
                             };
 
+                            //Skip displaying this group if it contains no attributes
+                            //const stepCount = filteredAttributes.filter(step => step.groupId === group.id).length;
+
+                            //console.log("selectedGroup", selectedGroup);
+                            //console.log("selectedGroup", selectedGroup);
+                            //console.log("filteredAttributes", filteredAttributes);
+
+                            if (!filteredAttributes.length) {
+                                return null; // Skip this group if it has no matching steps
+                            }
+
                             return (
                                 <div
                                     className={`menu_item ${group.id === selectedGroupId ? "selected" : ""}`}
@@ -869,7 +804,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                                                             //.filter((attribute) => attribute.enabled !== false) //08.08.2025 Allow Incompatible Options to be Visible with Opacity
                                                             .map((attribute) => {
 
-                                                                // 09.02.2025 Render Text Button instead of Image URL if there is no image URL
+                                                                //09.02.2025 Render Text Button instead of Image URL if there is no image URL
                                                                 let isShowButtons = step?.description.includes("%show_buttons%");
                                                                 let isTextButton = isShowButtons || attribute?.imageUrl?.length === 0;
 
