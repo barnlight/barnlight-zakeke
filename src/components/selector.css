@@ -216,31 +216,31 @@ div {
     padding: 20px 18px;
     max-height: 550px;
     overflow-y: auto;
-  
+
     /* For Firefox */
     scrollbar-width: thin;
     scrollbar-color: #aaa #f1f1f1;
-  }
-  
-  /* WebKit-based browsers (Chrome, Safari, Edge) */
-  .options_style::-webkit-scrollbar {
+}
+
+/* WebKit-based browsers (Chrome, Safari, Edge) */
+.options_style::-webkit-scrollbar {
     width: 6px;
-  }
-  
-  .options_style::-webkit-scrollbar-track {
+}
+
+.options_style::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 10px;
-  }
-  
-  .options_style::-webkit-scrollbar-thumb {
+}
+
+.options_style::-webkit-scrollbar-thumb {
     background: #aaa;
     border-radius: 10px;
-  }
-  
-  .options_style::-webkit-scrollbar-thumb:hover {
+}
+
+.options_style::-webkit-scrollbar-thumb:hover {
     background: #888;
-  }
-  
+}
+
 
 
 @media (min-width: 61.25em) {
@@ -333,7 +333,8 @@ div {
         border-radius: 8px;
         display: flex;
         flex-flow: row;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        ;
         padding: 0px;
     }
 
@@ -407,11 +408,37 @@ div {
         transform 0.3s ease-in-out;
 }
 
-.menu_choice_step_step[data-source='1'] { display: none !important; }
-.menu_options > div[data-enabled='0'] { cursor: not-allowed; }
-.menu_options > div[data-enabled='0'][data-duplicate='1'] { display: none !important; }
-.menu_options > div[data-enabled='1'] { transition: 300ms border; }
-.menu_options > div[data-enabled='1']:hover { border-color: #7f8c9d !important; }
+.menu_choice_step_step[data-source='1'] {
+    display: none !important;
+}
+
+.menu_options>div[data-enabled='0'] {
+    cursor: not-allowed;
+}
+
+.menu_options>div[data-enabled='0'][data-duplicate='1'] {
+    display: none !important;
+}
+
+.menu_options>div[data-enabled='1'] {
+    transition: 300ms border;
+}
+
+.menu_options>div[data-enabled='1']:hover {
+    border-color: #7f8c9d !important;
+}
+
+.right-menu-container {
+    position: relative;
+}
+
+.product-name {
+    position: absolute;
+    left: 0;
+    padding-left: 40px;
+    max-width: 45%;
+    line-height: normal;
+}
 
 @media screen and (max-width: 568px) {
     .menu_options {
