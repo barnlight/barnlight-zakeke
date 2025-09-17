@@ -49,6 +49,8 @@ interface SelectorProps {
     fullScreen: any;
 }
 
+export var SHOW_HYPHENS = false;
+
 const Selector: FunctionComponent<SelectorProps> = ({
     refViewer,
     fullScreen,
@@ -78,12 +80,14 @@ const Selector: FunctionComponent<SelectorProps> = ({
     // Permanently exclude the first group from the visible groups
     const idsToRemove = [-1];
 
-    var _group, _attributes, _attribute;
-    var _gid, _disabled_count;
+    // Show hyphens in group names, which are used for a special identifying/grouping purpose, if at least one group name contains the flag
+    var _group, _name, _attributes, _attribute;
+    var _gid, _to, _disabled_count;
 
     // Iterate each group as: groups[g]
     for (var g in groups) {
         _group = groups[g];
+        _name = _group.name;
         _attributes = _group["attributes"];
         _disabled_count = 0;
 
@@ -99,13 +103,17 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
         // Check if -all- attributes in this group have: enabled=false
         if ((_gid = _group["id"]) >= 0 && _disabled_count === _attributes.length) {
-            console.log("Group '" + _group["name"] + "' Has No Enabled Attributes", _gid);
-
-            // If so, add this group to idsToRemove
+            //console.log("Group '" + _group["name"] + "' Has No Enabled Attributes", _gid);
             idsToRemove.push(_gid);
         }
         else {
-            console.log("Group '" + _group["name"] + "' Has All Enabled Attributes", _group["id"]);
+            //console.log("Group '" + _group["name"] + "' Has All Enabled Attributes", _group["id"]);
+        }
+
+        // If at least one group name contains the show_hyphens flag, set the variable
+        if (!SHOW_HYPHENS && (_to = _name.indexOf("%show_hyphens%")) > 0) {
+            SHOW_HYPHENS = true;
+            _group.name = _name.substring(0, _to);
         }
     }
 
@@ -150,7 +158,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
 
     var selectedGroup = visibleGroups.find((group) => group.id === selectedGroupId);
     var selectedStep: any = selectedGroup
-        ? selectedGroup.steps.find((step) => step.id === selectedStepId) // REMOVED: selectedStep =
+        ? selectedGroup.steps.find((step) => step.id === selectedStepId) // Removed: selectedStep =
         : null;
 
     const attributes = useMemo(
@@ -522,7 +530,20 @@ const Selector: FunctionComponent<SelectorProps> = ({
     }
 
     return (
-        <Container>
+        <Container className="app-container">
+
+            <div className="product-name left-keys">
+                <div className="">
+                    <div style={{ color: '#322332', gap: '2px', display: 'flex', flexDirection: 'column', marginTop: '4px' }}>
+                        <h1 style={{ fontFamily: "Crimson", fontSize: '38px', fontWeight: 400, margin: '2px' }}>
+                            {productName}
+                        </h1>
+                    </div>
+                </div>
+                <Zoom zoomIn={zoomIn} zoomOut={zoomOut} />
+                <Scroll upRef={refViewer.current} downRef={viewFooter.current} />
+            </div>
+
             <div className="app">
                 <button className="menu-button" onClick={togglePopup}>
                     <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M1 12C1 11.4477 1.44772 11 2 11H22C22.5523 11 23 11.4477 23 12C23 12.5523 22.5523 13 22 13H2C1.44772 13 1 12.5523 1 12Z" fill="#0F0F0F"></path> <path d="M1 4C1 3.44772 1.44772 3 2 3H22C22.5523 3 23 3.44772 23 4C23 4.55228 22.5523 5 22 5H2C1.44772 5 1 4.55228 1 4Z" fill="#0F0F0F"></path> <path d="M1 20C1 19.4477 1.44772 19 2 19H22C22.5523 19 23 19.4477 23 20C23 20.5523 22.5523 21 22 21H2C1.44772 21 1 20.5523 1 20Z" fill="#0F0F0F"></path> </g></svg>
@@ -542,373 +563,382 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 )}
             </div>
 
-            <div className="" style={{ display: 'flex', flexDirection: 'column', position: 'absolute', left: '50%', gap: '22px' }}>
-                {!IS_IOS && (
-                    <div className="bubble_buttons" onClick={handleReset}>
-                        <div className="bubble_button_button">
-                            <ExplodeIcon>
-                                <svg
-                                    width="220"
-                                    height="220"
-                                    viewBox="16 16 110 110"
-                                    preserveAspectRatio="xMidYMid meet"
-                                    stroke="#838383"
-                                    stroke-width="24"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <g transform="translate(0, 150) scale(0.1, -0.1)">
-                                        <path
-                                            d="M705 1060 c-98 -16 -195 -62 -195 -92 0 -28 23 -31 61 -9 97 56 239 65 351 22 73 -28 156 -103 193 -174 l28 -53 -28 -53 c-38 -70 -121 -144 -193 -172 -45 -19 -77 -23 -152 -23 -127 0 -191 24 -274 106 -65 63 -65 61 -11 93 14 9 4 19 -65 68 -45 32 -85 55 -91 52 -11 -7 -12 -192 -1 -199 4 -2 18 2 32 9 23 12 28 10 86 -50 224 -230 603 -165 733 126 18 39 18 46 5 79 -76 183 -283 300 -479 270z"
-                                            fill="#838383"
-                                        />
-                                        <path
-                                            d="M709 821 c-21 -22 -29 -39 -29 -66 0 -48 44 -95 90 -95 46 0 90 47 90 95 0 27 -8 44 -29 66 -40 39 -82 39 -122 0z"
-                                            fill="#838383"
-                                        />
-                                    </g>
-                                </svg>
-                            </ExplodeIcon>
+            <div className="right-menu-container">
+                <div className="bubble-container" style={{ display: 'flex', flexDirection: 'column', position: 'absolute', left: '-70px', gap: '22px' }}>
+                    {!IS_IOS && (
+                        <div className="bubble_buttons" onClick={handleReset}>
+                            <div className="bubble_button_button">
+                                <ExplodeIcon>
+                                    <svg
+                                        width="220"
+                                        height="220"
+                                        viewBox="16 16 110 110"
+                                        preserveAspectRatio="xMidYMid meet"
+                                        stroke="#838383"
+                                        stroke-width="24"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <g transform="translate(0, 150) scale(0.1, -0.1)">
+                                            <path
+                                                d="M705 1060 c-98 -16 -195 -62 -195 -92 0 -28 23 -31 61 -9 97 56 239 65 351 22 73 -28 156 -103 193 -174 l28 -53 -28 -53 c-38 -70 -121 -144 -193 -172 -45 -19 -77 -23 -152 -23 -127 0 -191 24 -274 106 -65 63 -65 61 -11 93 14 9 4 19 -65 68 -45 32 -85 55 -91 52 -11 -7 -12 -192 -1 -199 4 -2 18 2 32 9 23 12 28 10 86 -50 224 -230 603 -165 733 126 18 39 18 46 5 79 -76 183 -283 300 -479 270z"
+                                                fill="#838383"
+                                            />
+                                            <path
+                                                d="M709 821 c-21 -22 -29 -39 -29 -66 0 -48 44 -95 90 -95 46 0 90 47 90 95 0 27 -8 44 -29 66 -40 39 -82 39 -122 0z"
+                                                fill="#838383"
+                                            />
+                                        </g>
+                                    </svg>
+                                </ExplodeIcon>
+                            </div>
+                            <div className="bubble_button_text">Reset View</div>
                         </div>
-                        <div className="bubble_button_text">Reset View</div>
-                    </div>
-                )}
+                    )}
 
-                {!IS_IOS && (
-                    <div
-                        className="bubble_buttons"
-                        onClick={() => {
-                            refViewer.current?.requestFullscreen();
-                            if (refViewer.current?.webkitRequestFullscreen) {
-                                refViewer.current.webkitRequestFullscreen();
-                            }
-                            const element = refViewer.current;
-                            if (element) {
-                                if (element.requestFullscreen) {
-                                    // element.requestFullscreen();
-                                } else if (element.webkitEnterFullscreen) {
-                                    element.webkitEnterFullscreen();
-                                } else if (element.mozRequestFullScreen) {
-                                    element.mozRequestFullScreen();
-                                } else if (element.msRequestFullscreen) {
-                                    element.msRequestFullscreen();
+                    {!IS_IOS && (
+                        <div
+                            className="bubble_buttons"
+                            onClick={() => {
+                                refViewer.current?.requestFullscreen();
+                                if (refViewer.current?.webkitRequestFullscreen) {
+                                    refViewer.current.webkitRequestFullscreen();
                                 }
-                            }
-                        }}
-                    >
-                        <div className="bubble_button_button">
-                            <ExplodeIcon>
-                                <ExplodeIconL />
-                            </ExplodeIcon>
+                                const element = refViewer.current;
+                                if (element) {
+                                    if (element.requestFullscreen) {
+                                        // element.requestFullscreen();
+                                    } else if (element.webkitEnterFullscreen) {
+                                        element.webkitEnterFullscreen();
+                                    } else if (element.mozRequestFullScreen) {
+                                        element.mozRequestFullScreen();
+                                    } else if (element.msRequestFullscreen) {
+                                        element.msRequestFullscreen();
+                                    }
+                                }
+                            }}
+                        >
+                            <div className="bubble_button_button">
+                                <ExplodeIcon>
+                                    <ExplodeIconL />
+                                </ExplodeIcon>
+                            </div>
+                            <div className="bubble_button_text">Full Screen</div>
                         </div>
-                        <div className="bubble_button_text">Full Screen</div>
-                    </div>
-                )}
+                    )}
 
-                {!IS_IOS && (
-                    <div className="bubble_buttons" onClick={() => handlePrint()}>
-                        <div className="bubble_button_button">
-                            <ExplodeIcon>
+                    {!IS_IOS && (
+                        <div className="bubble_buttons" onClick={() => handlePrint()}>
+                            <div className="bubble_button_button">
+                                <ExplodeIcon>
+                                    <svg
+                                        viewBox="0 0 32 32"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        stroke="#838383"
+                                        fill="#838383"
+                                        stroke-width=".2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="M28,9H25V3H7V9H4a2,2,0,0,0-2,2V21a2,2,0,0,0,2,2H7v6H25V23h3a2,2,0,0,0,2-2V11A2,2,0,0,0,28,9ZM9,5H23V9H9ZM23,27H9V17H23Zm5-6H25V15H7v6H4V11H28Z" fill="#838383" stroke="#838383" />
+                                    </svg>
+                                </ExplodeIcon>
+                            </div>
+                            <div className="bubble_button_text">Print</div>
+                        </div>
+                    )}
+
+                    {!IS_IOS && (
+                        <div className="bubble_buttons" onClick={handleShareClick}>
+                            <div className="bubble_button_button">
                                 <svg
+                                    width="32"
+                                    height="32"
                                     viewBox="0 0 32 32"
                                     xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
                                     stroke="#838383"
-                                    fill="#838383"
-                                    stroke-width=".2"
+                                    stroke-width="2.5"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                 >
-                                    <path d="M28,9H25V3H7V9H4a2,2,0,0,0-2,2V21a2,2,0,0,0,2,2H7v6H25V23h3a2,2,0,0,0,2-2V11A2,2,0,0,0,28,9ZM9,5H23V9H9ZM23,27H9V17H23Zm5-6H25V15H7v6H4V11H28Z" fill="#838383" stroke="#838383" />
+                                    <path d="M5 15v10a2 2 0 002 2h18a2 2 0 002-2v-10" />
+                                    <path d="M16 20V3.5" />
+                                    <path d="M22 9l-6-6-6 6" />
                                 </svg>
-                            </ExplodeIcon>
+                            </div>
+                            <div className="bubble_button_text">Share</div>
                         </div>
-                        <div className="bubble_button_text">Print</div>
-                    </div>
-                )}
-
-                {!IS_IOS && (
-                    <div className="bubble_buttons" onClick={handleShareClick}>
-                        <div className="bubble_button_button">
-                            <svg
-                                width="32"
-                                height="32"
-                                viewBox="0 0 32 32"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                stroke="#838383"
-                                stroke-width="2.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path d="M5 15v10a2 2 0 002 2h18a2 2 0 002-2v-10" />
-                                <path d="M16 20V3.5" />
-                                <path d="M22 9l-6-6-6 6" />
-                            </svg>
-                        </div>
-                        <div className="bubble_button_text">Share</div>
-                    </div>
-                )}
-            </div>
-
-            <div className="left-keys">
-                <div className="">
-                    <div style={{ color: '#322332', gap: '2px', display: 'flex', flexDirection: 'column', marginTop: '4px' }}>
-                        <h1 style={{ fontFamily: "Crimson", fontSize: '38px', fontWeight: 400, margin: '2px' }}>
-                            {productName}
-                        </h1>
-                    </div>
+                    )}
                 </div>
-                <Zoom zoomIn={zoomIn} zoomOut={zoomOut} />
-                <Scroll upRef={refViewer.current} downRef={viewFooter.current} />
-            </div>
 
-            <div className="" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: '12px' }}>
-                <div className="menu" >
-                    <div className="menu_group">
-                        {visibleGroups.map((group) => {
-                            const handleGroupClick = (group: any) => {
-                                selectGroup(group.id);
-                            };
+                <div className="menu-container" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', gap: '12px' }}>
+                    <div className="menu" >
+                        <div className="menu_group">
+                            {visibleGroups.map((group) => {
+                                const handleGroupClick = (group: any) => {
+                                    selectGroup(group.id);
+                                };
 
-                            //Skip displaying this group if it contains no attributes
-                            //const stepCount = filteredAttributes.filter(step => step.groupId === group.id).length;
+                                //Skip displaying this group if it contains no attributes
+                                //const stepCount = filteredAttributes.filter(step => step.groupId === group.id).length;
 
-                            //console.log("selectedGroup", selectedGroup);
-                            //console.log("selectedGroup", selectedGroup);
-                            //console.log("filteredAttributes", filteredAttributes);
+                                //console.log("selectedGroup", selectedGroup);
+                                //console.log("selectedGroup", selectedGroup);
+                                //console.log("filteredAttributes", filteredAttributes);
 
-                            if (!filteredAttributes.length) {
-                                return null; // Skip this group if it has no matching steps
-                            }
+                                if (!filteredAttributes.length) {
+                                    return null; // Skip this group if it has no matching steps
+                                }
 
-                            return (
-                                <div
-                                    className={`menu_item ${group.id === selectedGroupId ? "selected" : ""}`}
-                                    key={group.id}
-                                    onClick={() => {
-                                        scrollDownOnClick(checkOnce, setCheckOnce);
-                                        handleGroupClick(group);
-                                    }}
-                                >
-                                    {group.id === -1 ? "Other" : group.name}
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <br />
-                    <div className="options_style">
-                        {selectedGroup && (
-                            <>
-                                {filteredAttributes.map((step) => {
-                                    const normalizedStepName = String(step.name).trim().toUpperCase();
-                                    const isShadeSize = normalizedStepName === "SHADE SIZE";
+                                //Strip names to hyphen
+                                if (!SHOW_HYPHENS) {
+                                    var _name = group.name;
+                                    var _to = _name.indexOf("-");
+                                    group.name = _to > 0 ? _name.substring(0, _to) : group.name;
+                                }
 
-                                    //Determine if an attribute is found more than once to consider it a duplicate, to apply a different visibility method (faded out vs completely hidden)
-                                    const nameCounts = step.options.reduce((acc, attribute) => {
-                                        acc[attribute.name] = (acc[attribute.name] || 0) + 1;
-                                        return acc;
-                                    }, {} as Record<string, number>);
+                                return (
+                                    <div
+                                        className={`menu_item ${group.id === selectedGroupId ? "selected" : ""}`}
+                                        key={group.id}
+                                        onClick={() => {
+                                            scrollDownOnClick(checkOnce, setCheckOnce);
+                                            handleGroupClick(group);
+                                        }}
+                                    >
+                                        {group.id === -1 ? "Other" : group.name}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <br />
+                        <div className="options_style">
+                            {selectedGroup && (
+                                <>
+                                    {filteredAttributes.map((step) => {
+                                        const normalizedStepName = String(step.name).trim().toUpperCase();
+                                        const isShadeSize = normalizedStepName === "SHADE SIZE";
 
-                                    //Special Flag - Hides Attribute from View
-                                    if (step?.description.includes("%hidden%")) {
-                                        return null;
-                                    }
+                                        //Determine if an attribute is found more than once to consider it a duplicate, to apply a different visibility method (faded out vs completely hidden)
+                                        const nameCounts = step.options.reduce((acc, attribute) => {
+                                            acc[attribute.name] = (acc[attribute.name] || 0) + 1;
+                                            return acc;
+                                        }, {} as Record<string, number>);
 
-                                    //Display Attribute
-                                    return (
-                                        <div
-                                            className="menu_choice_step_step"
-                                            key={step.id}
-                                            onClick={() => {
-                                                handleStepClick(step); // Select the step
-                                                setCloseAttribute(step.id === selectedStepId ? !closeAttribute : true); // Toggle options visibility
-                                            }}
-                                            style={{ cursor: "pointer" }} // Make the entire area look clickable
-                                            data-source={step.name.toLowerCase().trim().indexOf("source") > -1 ? "1" : "0"}
-                                        >
+                                        //Special Flag - Hides Attribute from View
+                                        if (step?.description.includes("%hidden%")) {
+                                            return null;
+                                        }
+
+                                        //Strip names to hyphen
+                                        if (!SHOW_HYPHENS) {
+                                            var _name = step.name;
+                                            var _to = _name.indexOf("-");
+                                            step.name = _to > 0 ? _name.substring(0, _to) : step.name;
+                                        }
+
+                                        //Display Attribute
+                                        return (
                                             <div
-                                                className="menu_choice_step_title"
-                                                style={{
-                                                    display: "flex",
-                                                    borderBottom:
-                                                        selectedStepId !== step.id || !closeAttribute
-                                                            ? "1px solid var(--template-primary--400)"
-                                                            : "",
+                                                className="menu_choice_step_step"
+                                                key={step.id}
+                                                onClick={() => {
+                                                    handleStepClick(step); // Select the step
+                                                    setCloseAttribute(step.id === selectedStepId ? !closeAttribute : true); // Toggle options visibility
                                                 }}
+                                                style={{ cursor: "pointer" }} // Make the entire area look clickable
+                                                data-source={step.name.toLowerCase().trim().indexOf("source") > -1 ? "1" : "0"}
                                             >
                                                 <div
-                                                    className="menu_choice_step_description"
+                                                    className="menu_choice_step_title"
                                                     style={{
-                                                        paddingBottom: ".5em",
-                                                        marginRight: "auto",
-                                                        textTransform: "uppercase",
-                                                    }}
-                                                >
-                                                    {step.name}
-                                                </div>
-                                                <div
-                                                    className="menu_choice_step_toggle"
-                                                    style={{
-                                                        textAlign: "right",
                                                         display: "flex",
-                                                        paddingBottom: ".5em",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                        fontSize: "14px",
-                                                        fontWeight: "600",
-                                                        lineHeight: "16px",
-                                                        textTransform: "uppercase",
-                                                        color: "#b4b5b8",
+                                                        borderBottom:
+                                                            selectedStepId !== step.id || !closeAttribute
+                                                                ? "1px solid var(--template-primary--400)"
+                                                                : "",
                                                     }}
                                                 >
-                                                    {step.options.some((option) => option.selected)
-                                                        ? step.options.find((option) => option.selected)?.name
-                                                        : "Select Option"}
-                                                    <div style={{ marginLeft: "8px", display: "flex", alignItems: "center" }}>
-                                                        {closeAttribute && step.id === selectedStepId ? (
-                                                            <svg height="12px" width="12px" viewBox="0 0 125.304 125.304" fill="#000000">
-                                                                <g transform="rotate(270, 62.652, 62.652)">
-                                                                    <polygon points="21.409,62.652 103.895,125.304 103.895,0"></polygon>
-                                                                </g>
-                                                            </svg>
-                                                        ) : (
-                                                            <svg height="12px" width="12px" viewBox="0 0 125.304 125.304" fill="#000000">
-                                                                <g transform="rotate(180, 62.652, 62.652)">
-                                                                    <polygon points="21.409,62.652 103.895,125.304 103.895,0"></polygon>
-                                                                </g>
-                                                            </svg>
-                                                        )}
+                                                    <div
+                                                        className="menu_choice_step_description"
+                                                        style={{
+                                                            paddingBottom: ".5em",
+                                                            marginRight: "auto",
+                                                            textTransform: "uppercase",
+                                                        }}
+                                                    >
+                                                        {step.name}
+                                                    </div>
+                                                    <div
+                                                        className="menu_choice_step_toggle"
+                                                        style={{
+                                                            textAlign: "right",
+                                                            display: "flex",
+                                                            paddingBottom: ".5em",
+                                                            justifyContent: "center",
+                                                            alignItems: "center",
+                                                            fontSize: "14px",
+                                                            fontWeight: "600",
+                                                            lineHeight: "16px",
+                                                            textTransform: "uppercase",
+                                                            color: "#b4b5b8",
+                                                        }}
+                                                    >
+                                                        {step.options.some((option) => option.selected)
+                                                            ? step.options.find((option) => option.selected)?.name
+                                                            : "Select Option"}
+                                                        <div style={{ marginLeft: "8px", display: "flex", alignItems: "center" }}>
+                                                            {closeAttribute && step.id === selectedStepId ? (
+                                                                <svg height="12px" width="12px" viewBox="0 0 125.304 125.304" fill="#000000">
+                                                                    <g transform="rotate(270, 62.652, 62.652)">
+                                                                        <polygon points="21.409,62.652 103.895,125.304 103.895,0"></polygon>
+                                                                    </g>
+                                                                </svg>
+                                                            ) : (
+                                                                <svg height="12px" width="12px" viewBox="0 0 125.304 125.304" fill="#000000">
+                                                                    <g transform="rotate(180, 62.652, 62.652)">
+                                                                        <polygon points="21.409,62.652 103.895,125.304 103.895,0"></polygon>
+                                                                    </g>
+                                                                </svg>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <div
+                                                    className="menu_options"
+                                                    style={{
+                                                        opacity: closeAttribute && step.id === selectedStepId ? 1 : 0,
+                                                        transform:
+                                                            closeAttribute && step.id === selectedStepId
+                                                                ? "translateY(0)"
+                                                                : "translateY(-10px)",
+                                                        overflow: "hidden",
+                                                        transition: "all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)",
+                                                        transitionDelay:
+                                                            closeAttribute && step.id === selectedStepId ? "0.2s" : "0s",
+                                                    }}
+                                                >
+
+                                                    {closeAttribute && step.id === selectedStepId && (
+                                                        <>
+                                                            {Array.from(
+                                                                new Map(step.options.map((attribute) => [attribute.id, attribute])).values()
+                                                            )
+                                                                //.filter((attribute) => attribute.enabled !== false) //08.08.2025 Allow Incompatible Options to be Visible with Opacity
+                                                                .map((attribute) => {
+
+                                                                    //09.02.2025 Render Text Button instead of Image URL if there is no image URL
+                                                                    let isShowButtons = step?.description.includes("%show_buttons%");
+                                                                    let isTextButton = isShowButtons || attribute?.imageUrl?.length === 0;
+
+                                                                    //Special Flag - Hides Option from View
+                                                                    if (attribute?.description.includes("%hidden%")) {
+                                                                        return null;
+                                                                    }
+
+                                                                    //Display Option
+                                                                    return (
+                                                                        <ListItem
+                                                                            key={attribute.id}
+                                                                            onClick={(mouseEvent: React.MouseEvent<HTMLElement>) => handleOptionClick(mouseEvent, attribute)}
+                                                                            selected={attribute.selected}
+                                                                            data-enabled={attribute.enabled ? "1" : "0"}
+                                                                            data-duplicate={nameCounts[attribute.name] > 1 ? "1" : "0"}
+                                                                            style={{
+                                                                                backgroundColor: attribute.selected ? "#7f8c9d" : "white",
+                                                                                color: attribute.selected ? "white" : "inherit",
+                                                                                borderRadius: "11px",
+                                                                                border: attribute.selected
+                                                                                    ? "2.5px solid lightGray"
+                                                                                    : "2.5px solid lightGray",
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                justifyContent: "center",
+                                                                                position: "relative",
+                                                                                fontWeight: isShadeSize ? "600" : "600",
+                                                                                fontSize: isShadeSize ? "26px !important" : "auto",
+                                                                                height: isShadeSize ? "85px" : "auto",
+                                                                                width: isShadeSize ? "85px" : "auto",
+                                                                                textAlign: isShadeSize ? "center" : "inherit",
+                                                                                opacity: attribute.enabled ? "1" : "0.1",
+                                                                            }}
+                                                                            title={isShadeSize
+                                                                                ? attribute.name.replace(/[a-zA-Z]/g, "")
+                                                                                : attribute.name}
+                                                                        >
+                                                                            {isTextButton ? (
+                                                                                <div
+                                                                                    className="menu_choice_option_description"
+                                                                                    style={{
+                                                                                        borderRadius: "14px",
+                                                                                        display: "flex",
+                                                                                        alignItems: "center",
+                                                                                        justifyContent: "center",
+                                                                                        padding: "8px 18px",
+                                                                                        fontSize: isShadeSize ? "26px" : "15px",
+                                                                                        textAlign: isShadeSize ? "center" : "inherit",
+                                                                                    }}
+                                                                                >
+                                                                                    {isShadeSize
+                                                                                        ? attribute.name.replace(/[a-zA-Z]/g, "")
+                                                                                        : attribute.name}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="menu_choice_option_image_container">
+                                                                                    {attribute.imageUrl && <ListItemImage src={attribute.imageUrl} />}
+                                                                                </div>
+                                                                            )}
+                                                                            {!isTextButton && attribute.selected && (
+                                                                                <div
+                                                                                    // className="backgroundSvg"
+                                                                                    style={{
+                                                                                        right: '0px',
+                                                                                        height: '25px',
+                                                                                        width: '25px',
+                                                                                        bottom: '0px',
+                                                                                        position: "absolute",
+                                                                                        borderRadius: "8px",
+                                                                                        border: '2px solid rgb(121 136 156)',
+                                                                                        backgroundColor: "rgb(121 136 156)",
+                                                                                        display: "flex",
+                                                                                        alignItems: "center",
+                                                                                        justifyContent: "center",
+                                                                                    }}
+                                                                                >
+                                                                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                                                                                        <path
+                                                                                            d="M20 6L9 17L4 12"
+                                                                                            stroke="white"
+                                                                                            strokeWidth="2"
+                                                                                            strokeLinecap="round"
+                                                                                            strokeLinejoin="round"
+                                                                                        />
+                                                                                    </svg>
+                                                                                </div>
+                                                                            )}
+                                                                        </ListItem>
+                                                                    );
+                                                                })}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div
-                                                className="menu_options"
-                                                style={{
-                                                    opacity: closeAttribute && step.id === selectedStepId ? 1 : 0,
-                                                    transform:
-                                                        closeAttribute && step.id === selectedStepId
-                                                            ? "translateY(0)"
-                                                            : "translateY(-10px)",
-                                                    overflow: "hidden",
-                                                    transition: "all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)",
-                                                    transitionDelay:
-                                                        closeAttribute && step.id === selectedStepId ? "0.2s" : "0s",
-                                                }}
-                                            >
-
-                                                {closeAttribute && step.id === selectedStepId && (
-                                                    <>
-                                                        {Array.from(
-                                                            new Map(step.options.map((attribute) => [attribute.id, attribute])).values()
-                                                        )
-                                                            //.filter((attribute) => attribute.enabled !== false) //08.08.2025 Allow Incompatible Options to be Visible with Opacity
-                                                            .map((attribute) => {
-
-                                                                //09.02.2025 Render Text Button instead of Image URL if there is no image URL
-                                                                let isShowButtons = step?.description.includes("%show_buttons%");
-                                                                let isTextButton = isShowButtons || attribute?.imageUrl?.length === 0;
-
-                                                                //Display Option
-                                                                return (
-                                                                    <ListItem
-                                                                        key={attribute.id}
-                                                                        onClick={(mouseEvent: React.MouseEvent<HTMLElement>) => handleOptionClick(mouseEvent, attribute)}
-                                                                        selected={attribute.selected}
-                                                                        data-enabled={attribute.enabled ? "1" : "0"}
-                                                                        data-duplicate={nameCounts[attribute.name] > 1 ? "1" : "0"}
-                                                                        style={{
-                                                                            backgroundColor: attribute.selected ? "#7f8c9d" : "white",
-                                                                            color: attribute.selected ? "white" : "inherit",
-                                                                            borderRadius: "11px",
-                                                                            border: attribute.selected
-                                                                                ? "2.5px solid lightGray"
-                                                                                : "2.5px solid lightGray",
-                                                                            display: "flex",
-                                                                            alignItems: "center",
-                                                                            justifyContent: "center",
-                                                                            position: "relative",
-                                                                            fontWeight: isShadeSize ? "600" : "600",
-                                                                            fontSize: isShadeSize ? "26px !important" : "auto",
-                                                                            height: isShadeSize ? "85px" : "auto",
-                                                                            width: isShadeSize ? "85px" : "auto",
-                                                                            textAlign: isShadeSize ? "center" : "inherit",
-                                                                            opacity: attribute.enabled ? "1" : "0.1",
-                                                                        }}
-                                                                        title={isShadeSize
-                                                                            ? attribute.name.replace(/[a-zA-Z]/g, "")
-                                                                            : attribute.name}
-                                                                    >
-                                                                        {isTextButton ? (
-                                                                            <div
-                                                                                className="menu_choice_option_description"
-                                                                                style={{
-                                                                                    borderRadius: "14px",
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    justifyContent: "center",
-                                                                                    padding: "8px 18px",
-                                                                                    fontSize: isShadeSize ? "26px" : "15px",
-                                                                                    textAlign: isShadeSize ? "center" : "inherit",
-                                                                                }}
-                                                                            >
-                                                                                {isShadeSize
-                                                                                    ? attribute.name.replace(/[a-zA-Z]/g, "")
-                                                                                    : attribute.name}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="menu_choice_option_image_container">
-                                                                                {attribute.imageUrl && <ListItemImage src={attribute.imageUrl} />}
-                                                                            </div>
-                                                                        )}
-                                                                        {!isTextButton && attribute.selected && (
-                                                                            <div
-                                                                                // className="backgroundSvg"
-                                                                                style={{
-                                                                                    right: '0px',
-                                                                                    height: '25px',
-                                                                                    width: '25px',
-                                                                                    bottom: '0px',
-                                                                                    position: "absolute",
-                                                                                    borderRadius: "8px",
-                                                                                    border: '2px solid rgb(121 136 156)',
-                                                                                    backgroundColor: "rgb(121 136 156)",
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    justifyContent: "center",
-                                                                                }}
-                                                                            >
-                                                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                                                                                    <path
-                                                                                        d="M20 6L9 17L4 12"
-                                                                                        stroke="white"
-                                                                                        strokeWidth="2"
-                                                                                        strokeLinecap="round"
-                                                                                        strokeLinejoin="round"
-                                                                                    />
-                                                                                </svg>
-                                                                            </div>
-                                                                        )}
-                                                                    </ListItem>
-                                                                );
-                                                            })}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </>
-                        )}
+                                        );
+                                    })}
+                                </>
+                            )}
+                        </div>
+                        <div className="" style={{ marginTop: '24px' }}>
+                            {screenWidth < 500 && <MenuFooter viewFooter={viewFooter} />}
+                        </div>
                     </div>
-                    <div className="" style={{ marginTop: '24px' }}>
-                        {screenWidth < 500 && <MenuFooter viewFooter={viewFooter} />}
-                    </div>
+                    {screenWidth > 500 && (
+                        <div className="" style={{ marginTop: '7px' }}>
+                            <MenuFooter viewFooter={viewFooter} />
+                        </div>
+                    )}
                 </div>
-                {screenWidth > 500 && (
-                    <div className="" style={{ marginTop: '7px' }}>
-                        <MenuFooter viewFooter={viewFooter} />
-                    </div>
-                )}
             </div>
         </Container>
     );
