@@ -25,7 +25,7 @@ import MenuFooter from "./Footer/MenuFooter";
 import Zoom from "./Zoom/Zoom";
 import ShareDialog from "./dialogs/ShareDialog";
 import { scrollDownOnClick } from "../Helpers";
-
+//
 const Container = styled.div`
   height: auto;
   font-family: 'Open Sans';
@@ -39,6 +39,7 @@ const Container = styled.div`
   }
 `;
 
+//
 export const ExplodeIcon = styled(Icon)`
   width: 32px;
   height: 32px;
