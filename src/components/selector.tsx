@@ -25,7 +25,7 @@ import MenuFooter from "./Footer/MenuFooter";
 import Zoom from "./Zoom/Zoom";
 import ShareDialog from "./dialogs/ShareDialog";
 import { scrollDownOnClick } from "../Helpers";
-//
+
 const Container = styled.div`
   height: auto;
   font-family: 'Open Sans';
@@ -39,7 +39,6 @@ const Container = styled.div`
   }
 `;
 
-//
 export const ExplodeIcon = styled(Icon)`
   width: 32px;
   height: 32px;
@@ -149,8 +148,9 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const viewFooter = useRef<HTMLDivElement | null>(null);
 
     //Additional Identifying Properties
-    const [shadeSize, setShadeSize] = useState<string | null>(null); // Values: Integers 8" through 28"
+    const [shadeSize, setShadeSize] = useState<number | null>(null); // Values: Integers 8" through 28"
     const [mountingType, setMountingType] = useState<string | null>(null); // Values: A (angled) | S (straight)
+    const [shadeAccessoryName, setShadeAccessoryName] = useState<string | null>(null); // Values: A (angled) | S (straight)
 
     useEffect(() => {
         if (sellerSettings && sellerSettings?.isCompositionRecapVisibleFromStart)
@@ -167,36 +167,137 @@ const Selector: FunctionComponent<SelectorProps> = ({
         [selectedGroup, selectedStep]
     );
 
-    const handleStepClick = useCallback((step: any) => {
-        selectStepName(step.name);
-        selectStep(step.id);
+    //NOTE: A Step is the same as an Attribute
+    const handleStepClick = useCallback((attribute: any) => {
+        selectStepName(attribute.name);
+        selectStep(attribute.id);
         selectOptionName("");
         setOpenSteps((prev) => {
             const newSet = new Set(prev);
-            if (newSet.has(step.id)) {
-                newSet.delete(step.id);
+            if (newSet.has(attribute.id)) {
+                newSet.delete(attribute.id);
             } else {
-                newSet.add(step.id);
+                newSet.add(attribute.id);
             }
             return newSet;
         });
+
+        console.log(`Selected Attribute: ${attribute.name}`, attribute);
     }, [selectStepName, selectStep, selectOptionName]);
 
     const handleOptionClick = useCallback(
-        (mouseEvent: React.MouseEvent<HTMLElement>, attribute: any) => {
+        (mouseEvent: React.MouseEvent<HTMLElement>, option: any) => {
             mouseEvent.stopPropagation(); // Prevent the click from spreading to other elements
 
             //If attribute is disabled, exit to prevent click
-            if (!attribute.enabled) {
+            if (!option.enabled) {
                 mouseEvent.preventDefault(); //Do nothing by default other than alert and return
                 alert("This option is not compatible with another selection.");
                 return false;
             }
 
-            //console.log(`Selected Attribute: ${attribute.name}`); // NOTE: This is technically an Option and variable should be named `option`
-            setMountingSelectedOption(attribute.name);
-            selectOption(attribute.id);
-            selectOptionName(attribute.name);
+            console.log(`Selected Option: ${option.name}`, option);
+            var attribute = option.attribute;
+            var attribute_name_lc = attribute.name.toLowerCase();
+            var is_shade = attribute_name_lc.indexOf("shade size") !== -1;
+            var is_shade_accessory = attribute_name_lc.indexOf("shade accessory") !== -1;
+
+            //Store this Shade Accessory for later re-association when Shade Size changes
+            if ( is_shade_accessory )
+            {
+                setShadeAccessoryName(option.name);
+            }
+
+            //Set Option Data
+            setMountingSelectedOption(option.name); // Does not seem to be used anywhere ?
+            selectOption(option.id);
+            selectOptionName(option.name);
+
+            //Re-Apply Shade Accessory
+            if ( is_shade && shadeAccessoryName )
+            {
+                // Check if there is an existing Shade Accessory selected
+                console.log("{ Restore Shade Accessory:", shadeAccessoryName);
+
+                //Find the attribute with this name and select it
+                var shade_accessory_group = visibleGroups.find((group) => group.name.toLowerCase().indexOf("shade accessory") !== -1);
+                console.log("  shade_accessory_group:", shade_accessory_group);
+
+                //Handle finding which "Shade Accessory-[size]" to select (cannot check for `attribute.enabled=true` because they are all false for some reason)
+                var shade_size = option.name.split("\"")[0];
+                var shade_accessory_name_by_size = "Shade Accessory-"+shade_size;
+                console.log("  shade_accessory_name_by_size:", shade_accessory_name_by_size);
+
+                //Find the attribute by size inside the Shade Accessory Group
+                var shade_accessory_attribute = shade_accessory_group?.attributes.find((attribute) => attribute.name.toLowerCase() === shade_accessory_name_by_size.toLowerCase());
+                console.log("  shade_accessory_attribute:", shade_accessory_attribute);
+
+                //Get the ID of the attribute by translating the Shade Accessory Name
+                //Iterate each shade_accessory_attribute.options and find where the option.name=shadeAccessoryName
+                var shade_accessory_options = shade_accessory_attribute?.options;
+
+                if ( shade_accessory_options )
+                {
+                    var option_is_found = false;
+                    var option_none_id = 0;
+
+                    for ( var o = 0; o < shade_accessory_options.length; o++ )
+                    {
+                        let _option = shade_accessory_options[o];
+
+                        if ( _option.name.toLowerCase() === "none" )
+                        {
+                            option_none_id = _option.id;
+                        }
+
+                        if ( !option_is_found && _option.name === shadeAccessoryName )
+                        {
+                            //Set the Shade Accessory
+                            console.log("} Restore Shade Accessory Set:", _option.id + " ("+shadeAccessoryName+")");
+                            option_is_found = true;
+
+                            //FIXME: This sets the appropriate option data/selection, but does not inherently clear out previous selections (Cast Guard still shows even though Wire Cage is set)
+                            selectOption(_option.id); //NOTE: This does not seem to unset or deselect the previous options/objects
+                            selectOptionName(_option.name);
+
+                            //NOTE: Manually clicking Wire Card clears Cast Guard, so there is a disconnect between calling selectOption() and what the click event actually does. Must call click event
+                            //NOTE: Apparently there is a race condition to also factor, so placing inside a timeout is a fast solution, even though certainly not ideal
+                            //Element exists, but fails at this time
+                            //Setting the option twice seems to be enough to clear the previous selection. Only thing is there will be a brief flash of previous selection
+                            setTimeout(function()
+                            {
+                                selectOption(_option.id);
+                            }, 100);
+
+                        }
+                    } // for options
+
+                    //If the option is not found, popup an alert stating that the combination is not supported
+                    if ( !option_is_found )
+                    {
+                        if ( option_none_id )
+                        {
+                            console.log("} Restore Shade Accessory Reset to None:", option_none_id + " ("+shadeAccessoryName+" Not Found)");
+                            alert("'" + shadeAccessoryName+"' is not compatible with this Shade Size selection. It has been automatically reset to 'None'.");
+                            selectOption(option_none_id);
+                            selectOptionName("None");
+
+                            //Reset the last shade accessory selected
+                            setShadeAccessoryName("None");
+
+                            //Setting the option twice seems to be enough to clear the previous selection
+                            setTimeout(function()
+                            {
+                                selectOption(option_none_id);
+                            }, 100);
+                        }
+                        else
+                        {
+                            alert("Error: Cannot set Shade Accessory to non-existent 'None' Option.");
+                        }
+                    } // !option_is_found
+                }
+            }
         },
         [selectOption, selectOptionName]
     )
@@ -204,12 +305,11 @@ const Selector: FunctionComponent<SelectorProps> = ({
     const filteredAttributes = useMemo(() => {
         if (!selectedGroup?.attributes) return [];
 
-        console.log("Selected Group:", selectedGroup);
+        //console.log("Selected Group:", selectedGroup);
 
         // General filtering for other groups
         return selectedGroup.attributes.filter((step) => step.enabled);
-    }, [selectedGroup, groups]);
-
+    }, [selectedGroup]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -315,7 +415,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 const defaultOption = attribute.options.find((option) => option.enabled) || attribute.options[0];
                 if (defaultOption) {
                     selectOption(defaultOption.id); // Select the first enabled option of each attribute in the hidden group
-                    // console.log(`Reset: Selected hidden attribute ${attribute.name} with option ${defaultOption.name}`);
+                    //console.log(`Reset: Selected hidden attribute ${attribute.name} with option ${defaultOption.name}`);
                 }
             });
         }
@@ -708,7 +808,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                                             handleGroupClick(group);
                                         }}
                                     >
-                                        {group.id === -1 ? "Other" : group.name}
+                                        {group.id === -1 ? "Other" : group.name.split("%show_hyphens%").join("")}
                                     </div>
                                 );
                             })}
@@ -842,6 +942,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                                                                     return (
                                                                         <ListItem
                                                                             key={attribute.id}
+                                                                            className={`option-${attribute.id}`}
                                                                             onClick={(mouseEvent: React.MouseEvent<HTMLElement>) => handleOptionClick(mouseEvent, attribute)}
                                                                             selected={attribute.selected}
                                                                             data-enabled={attribute.enabled ? "1" : "0"}
