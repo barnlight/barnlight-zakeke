@@ -182,7 +182,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             return newSet;
         });
 
-        console.log(`Selected Attribute: ${attribute.name}`, attribute);
+        console.log(`[UI] Selected Attribute: ${attribute.name}`, attribute);
     }, [selectStepName, selectStep, selectOptionName]);
 
     const handleOptionClick = useCallback(
@@ -196,7 +196,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                 return false;
             }
 
-            console.log(`Selected Option: ${option.name}`, option);
+            console.log(`[UI] Selected Option: ${option.name}`, option);
             var attribute = option.attribute;
             var attribute_name_lc = attribute.name.toLowerCase();
             var is_shade = attribute_name_lc.indexOf("shade size") !== -1;
@@ -217,20 +217,20 @@ const Selector: FunctionComponent<SelectorProps> = ({
             if ( is_shade && shadeAccessoryName )
             {
                 // Check if there is an existing Shade Accessory selected
-                console.log("{ Restore Shade Accessory:", shadeAccessoryName);
+                console.log("[UI] { Restore Shade Accessory:", shadeAccessoryName);
 
                 //Find the attribute with this name and select it
                 var shade_accessory_group = visibleGroups.find((group) => group.name.toLowerCase().indexOf("shade accessory") !== -1);
-                console.log("  shade_accessory_group:", shade_accessory_group);
+                //console.log("  shade_accessory_group:", shade_accessory_group);
 
                 //Handle finding which "Shade Accessory-[size]" to select (cannot check for `attribute.enabled=true` because they are all false for some reason)
                 var shade_size = option.name.split("\"")[0];
                 var shade_accessory_name_by_size = "Shade Accessory-"+shade_size;
-                console.log("  shade_accessory_name_by_size:", shade_accessory_name_by_size);
+                //console.log("  shade_accessory_name_by_size:", shade_accessory_name_by_size);
 
                 //Find the attribute by size inside the Shade Accessory Group
                 var shade_accessory_attribute = shade_accessory_group?.attributes.find((attribute) => attribute.name.toLowerCase() === shade_accessory_name_by_size.toLowerCase());
-                console.log("  shade_accessory_attribute:", shade_accessory_attribute);
+                //console.log("  shade_accessory_attribute:", shade_accessory_attribute);
 
                 //Get the ID of the attribute by translating the Shade Accessory Name
                 //Iterate each shade_accessory_attribute.options and find where the option.name=shadeAccessoryName
@@ -253,7 +253,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                         if ( !option_is_found && _option.name === shadeAccessoryName )
                         {
                             //Set the Shade Accessory
-                            console.log("} Restore Shade Accessory Set:", _option.id + " ("+shadeAccessoryName+")");
+                            console.log("[UI] } Restore Shade Accessory Set:", _option.id + " ("+shadeAccessoryName+")");
                             option_is_found = true;
 
                             //FIXME: This sets the appropriate option data/selection, but does not inherently clear out previous selections (Cast Guard still shows even though Wire Cage is set)
@@ -277,7 +277,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                     {
                         if ( option_none_id )
                         {
-                            console.log("} Restore Shade Accessory Reset to None:", option_none_id + " ("+shadeAccessoryName+" Not Found)");
+                            //console.log("[UI] } Restore Shade Accessory Reset to None:", option_none_id + " ("+shadeAccessoryName+" Not Found)");
                             alert("'" + shadeAccessoryName+"' is not compatible with this Shade Size selection. It has been automatically reset to 'None'.");
                             selectOption(option_none_id);
                             selectOptionName("None");
