@@ -217,7 +217,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
             if ( is_shade && shadeAccessoryName )
             {
                 // Check if there is an existing Shade Accessory selected
-                console.log("[UI] { Restore Shade Accessory:", shadeAccessoryName);
+                console.log("[UI] Restore Shade Accessory:", shadeAccessoryName);
 
                 //Find the attribute with this name and select it
                 var shade_accessory_group = visibleGroups.find((group) => group.name.toLowerCase().indexOf("shade accessory") !== -1);
@@ -253,7 +253,7 @@ const Selector: FunctionComponent<SelectorProps> = ({
                         if ( !option_is_found && _option.name === shadeAccessoryName )
                         {
                             //Set the Shade Accessory
-                            console.log("[UI] } Restore Shade Accessory Set:", _option.id + " ("+shadeAccessoryName+")");
+                            console.log("[UI] Restored Shade Accessory:", _option.id + " ("+shadeAccessoryName+")");
                             option_is_found = true;
 
                             //FIXME: This sets the appropriate option data/selection, but does not inherently clear out previous selections (Cast Guard still shows even though Wire Cage is set)
